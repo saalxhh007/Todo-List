@@ -1,8 +1,9 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/Signup.dart';
+import 'package:frontend/boarding.dart';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -25,12 +26,20 @@ class _LoginState extends State<Login> {
 
       if (response.statusCode == 201) {
         final responseSucceed = jsonDecode(response.body);
-        print(responseSucceed);
+        final token = responseSucceed['token'];
+
+        final preferences = await SharedPreferences.getInstance();
+        await preferences.setString("AuthToken", token);
+
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => const Boarding()));
       } else {
-        print('Failed');
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Login Failed")));
       }
     } catch (e) {
-      print(e);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Login Failed")));
     }
   }
 

@@ -1,6 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
-import {signUp, login} from "../controllers/userController.js"
+import {signUp, login, userInf} from "../controllers/userController.js"
 import path from "path"
 import multer from "multer";
 
@@ -19,5 +19,6 @@ const upload = multer({ storage })
 
 userRouter.post("/signup", upload.single("image"), signUp)
 userRouter.post("/login", login)
+userRouter.post("/userData", userInf)
 
 export default userRouter

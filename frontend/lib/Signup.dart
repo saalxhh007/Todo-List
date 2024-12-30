@@ -50,7 +50,6 @@ class _SignupState extends State<Signup> {
 
       if (response.statusCode == 201) {
         final responseSucceed = jsonDecode(response.body);
-        print(responseSucceed);
       } else {
         print('Failed');
       }

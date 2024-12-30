@@ -96,5 +96,34 @@ export const login = async (req,res) => {
     } catch (error) {
         res.json({ message: "Error In User Controller"});
     }
+}
 
+
+export const userInf = async (req, res) => {
+    const {token} = req.body;
+
+    try {
+            const decoded = jwt.verify(token,process.env.JWT_SECRET);
+            const userId = decoded.id;
+            console.log(userId);
+            
+            const user = await userModel.findOne({ where: { userId } });
+
+            if (!user) {
+                return res.status(400).json({ message: "User Doesn't Exist" });
+            }
+    
+        res.status(200).json({
+            data:{
+                userId: user.userId,
+                name: user.name,
+                date_birth: user.date_birth,
+                email: user.email,
+                password: user.password,
+                phoneNumber: user.phoneNumber,}
+        });
+        
+    } catch (error) {
+        res.json({ message: "Error In User Controller"});
+    }
 }
