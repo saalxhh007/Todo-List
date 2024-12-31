@@ -48,10 +48,8 @@ class _SignupState extends State<Signup> {
           headers: {"Content-Type": "application/json"},
           body: jsonEncode(userData));
 
-      if (response.statusCode == 201) {
-        final responseSucceed = jsonDecode(response.body);
-      } else {
-        print('Failed');
+      if (response.statusCode != 201) {
+        return;
       }
     } catch (e) {
       print(e);
@@ -200,6 +198,7 @@ class _SignupState extends State<Signup> {
                   ),
                   // Sign Up Button
                   const SizedBox(height: 20),
+                  // ignore: sized_box_for_whitespace
                   Container(
                     width: double.infinity,
                     child: ElevatedButton(

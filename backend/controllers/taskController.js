@@ -2,28 +2,25 @@ import taskModel from "../models/taskModel.js";
 
 export const createTask = async (req, res) => {
 
-    const { title, description, startDate, endDate, status, periority, voice } = req.body
-    
+    const { title, description, start_date, end_date, status, priority, voice } = req.body;
+    const user_id = req.user.id;
     try {
-        const userId = req.user.id;
-        
-
         const newTask = await taskModel.create({
             title,
             description,
-            startDate,
-            endDate,
+            start_date,
+            end_date,
             status,
-            periority,
+            priority,
             voice,
-            userId
-        })
+            user_id,
+        });
 
         res.status(201).json({ data: newTask, message: "Task created successfully"})
         
     } catch (error) {
-        res.status(500).json({ success: false, message: "An error occurred while creating the task"
-    });
+        console.error("Error creating task:", error);
+        res.status(500).json({ success: false, message: error.message });
     }
 }
 

@@ -3,7 +3,7 @@ import sequelize from "../config/db.js";
 import userModel from "./UserModel.js";
 
 const taskModel = sequelize.define("Task",{
-    taskId:{
+    task_id:{
         type:DataTypes.INTEGER,
         autoIncrement:true,
         primaryKey:true,
@@ -16,11 +16,11 @@ const taskModel = sequelize.define("Task",{
         type:DataTypes.STRING,
         allowNull:true,
     },
-    startDate:{
+    start_date:{
         type:DataTypes.DATE,
         defaultValue:DataTypes.NOW
     },
-    endDate:{
+    end_date:{
         type:DataTypes.DATE,
         allowNull:true
     },
@@ -28,11 +28,11 @@ const taskModel = sequelize.define("Task",{
         type:DataTypes.ENUM("Pending","Completed"),
         defaultValue:"Pending"
     },
-    periority:{
+    priority:{
         type:DataTypes.ENUM("Low","Medium","High","Urgent"),
         allowNull:true
     },
-    Voice:{
+    voice:{
         type:DataTypes.STRING,
         allowNull:true
     },
