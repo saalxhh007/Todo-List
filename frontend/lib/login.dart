@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/Signup.dart';
-import 'package:frontend/boarding.dart';
+import 'package:todo_list/Signup.dart';
+import 'package:todo_list/boarding.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,9 +20,11 @@ class _LoginState extends State<Login> {
     };
 
     try {
-      final response = await http.post(Uri.parse("http://localhost:3000/login"),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(userData));
+      final response = await http.post(
+        Uri.parse("http://10.0.2.2:3000/login"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(userData),
+      );
 
       if (response.statusCode == 201) {
         final responseSucceed = jsonDecode(response.body);
@@ -31,15 +33,22 @@ class _LoginState extends State<Login> {
         final preferences = await SharedPreferences.getInstance();
         await preferences.setString("AuthToken", token);
 
+        if (!mounted) return;
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => const Boarding()));
+          context,
+          MaterialPageRoute(builder: (context) => const Boarding()),
+        );
       } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Login Failed")));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Login Failed")),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Login Failed")));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login Failed")),
+      );
     }
   }
 
@@ -48,7 +57,7 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     bool isChecked = false;
-    final _formGlobalKey = GlobalKey<FormState>();
+    final formGlobalKey = GlobalKey<FormState>();
     return Scaffold(
       appBar: AppBar(
         title: const Text("Login"),
@@ -57,7 +66,7 @@ class _LoginState extends State<Login> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Form(
-              key: _formGlobalKey,
+              key: formGlobalKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -132,17 +141,14 @@ class _LoginState extends State<Login> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  Container(
+                  SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        if (_formGlobalKey.currentState!.validate()) {
+                        if (formGlobalKey.currentState!.validate()) {
                           fetchData();
                         }
                       },
-                      child: const Text(
-                        "Login",
-                      ),
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: Colors.blue,
@@ -150,6 +156,9 @@ class _LoginState extends State<Login> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
+                      ),
+                      child: const Text(
+                        "Login",
                       ),
                     ),
                   ),

@@ -36,6 +36,10 @@ const taskModel = sequelize.define("Task",{
         type:DataTypes.STRING,
         allowNull:true
     },
+    category:{
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     user_id: {
         type: DataTypes.INTEGER,
         references: {

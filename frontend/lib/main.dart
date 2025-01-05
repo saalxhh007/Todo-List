@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/Signup.dart';
-import 'package:frontend/boarding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_list/boarding.dart';
+import 'package:todo_list/signup.dart';
 
 void main() {
   runApp(const TodoApp());
@@ -12,7 +12,9 @@ class TodoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: AuthHandler());
+    return const MaterialApp(
+        //home: AuthHandler()
+        home: AuthHandler());
   }
 }
 
@@ -33,12 +35,16 @@ class _AuthHandlerState extends State<AuthHandler> {
   }
 
   Future<void> _checkToken() async {
-    final preferences = await SharedPreferences.getInstance();
-    final token = preferences.getString("AuthToken");
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final token = preferences.getString("AuthToken");
 
-    setState(() {
-      _hasToken = token != null && token.isNotEmpty;
-    });
+      setState(() {
+        _hasToken = token != null && token.isNotEmpty;
+      });
+    } catch (e) {
+      print("Error checking token: $e");
+    }
   }
 
   @override

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_list/boarding.dart';
+import 'package:todo_list/login.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -43,13 +45,27 @@ class _SignupState extends State<Signup> {
     };
 
     try {
-      final response = await http.post(
-          Uri.parse("http://localhost:3000/signup"),
+      final response = await http.post(Uri.parse("http://10.0.2.2:3000/signup"),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode(userData));
 
-      if (response.statusCode != 201) {
-        return;
+      if (response.statusCode == 201) {
+        final responseSucceed = jsonDecode(response.body);
+        final token = responseSucceed['token'];
+
+        final preferences = await SharedPreferences.getInstance();
+        await preferences.setString("AuthToken", token);
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Boarding()),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Sign Up Failed")),
+        );
       }
     } catch (e) {
       print(e);
@@ -198,8 +214,7 @@ class _SignupState extends State<Signup> {
                   ),
                   // Sign Up Button
                   const SizedBox(height: 20),
-                  // ignore: sized_box_for_whitespace
-                  Container(
+                  SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
@@ -207,9 +222,6 @@ class _SignupState extends State<Signup> {
                           fetchData();
                         }
                       },
-                      child: const Text(
-                        "Sign Up",
-                      ),
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: Colors.blue,
@@ -217,6 +229,9 @@ class _SignupState extends State<Signup> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
+                      ),
+                      child: const Text(
+                        "Sign Up",
                       ),
                     ),
                   ),

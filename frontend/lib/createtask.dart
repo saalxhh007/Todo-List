@@ -1,72 +1,68 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:frontend/boarding.dart';
-import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
-class CreateTask extends StatefulWidget {
-  final int userId;
-  const CreateTask({super.key, required this.userId});
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:todo_list/boarding.dart';
+import 'package:todo_list/constant.dart';
+import 'package:http/http.dart' as http;
+
+class Createtask extends StatefulWidget {
+  const Createtask({super.key});
 
   @override
-  State<CreateTask> createState() => _CreateTaskState();
+  State<Createtask> createState() => _CreatetaskState();
 }
 
-class _CreateTaskState extends State<CreateTask> {
+class _CreatetaskState extends State<Createtask> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController endDateController = TextEditingController();
+  final TextEditingController newCategoryController = TextEditingController();
+  DateTime? startDate;
+  DateTime? endDate;
+
+  List<String> categories = ['Work', 'Personal', 'Shopping', 'Fitness'];
   String? selectedCategory;
   String? selectedPriority;
 
-  final _formGlobalKey = GlobalKey<FormState>();
-
-  List<String> categories = ['Personal', 'Work', 'Health'];
-  String todayDate = DateFormat("dd/MM/yyyy").format(DateTime.now());
-
-  Future<void> selectEndDate() async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      firstDate: DateTime(1990),
-      lastDate: DateTime(2100),
-      initialDate: DateTime.now(),
-    );
-
-    if (picked != null) {
-      setState(() {
-        endDateController.text = DateFormat("dd/MM/yyyy").format(picked);
-      });
-    }
-  }
+  List<String> priorities = ['Low', 'Medium', 'High', 'Urgent'];
 
   List<Widget> createPriorityButtons() {
-    List<String> priorities = ['Low', 'Medium', 'High', 'Urgent'];
     return priorities.map((priority) {
       bool isSelected = selectedPriority == priority;
       Color backgroundColor;
       Color textColor;
+      Color borderColor;
 
       switch (priority) {
         case 'Low':
-          backgroundColor = isSelected ? Colors.green : Colors.white;
+          backgroundColor =
+              isSelected ? Colors.green.shade300 : Colors.transparent;
           textColor = isSelected ? Colors.white : Colors.green;
+          borderColor = Colors.green.shade300;
           break;
         case 'Medium':
-          backgroundColor = isSelected ? Colors.yellow : Colors.white;
-          textColor = isSelected ? Colors.black : Colors.yellow;
+          backgroundColor =
+              isSelected ? Colors.yellow.shade300 : Colors.transparent;
+          textColor = isSelected ? Colors.white : Colors.yellow;
+          borderColor = Colors.yellow.shade300;
           break;
         case 'High':
-          backgroundColor = isSelected ? Colors.orange : Colors.white;
+          backgroundColor =
+              isSelected ? Colors.orange.shade300 : Colors.transparent;
           textColor = isSelected ? Colors.white : Colors.orange;
+          borderColor = Colors.orange.shade300;
           break;
         case 'Urgent':
-          backgroundColor = isSelected ? Colors.red : Colors.white;
+          backgroundColor =
+              isSelected ? Colors.red.shade300 : Colors.transparent;
           textColor = isSelected ? Colors.white : Colors.red;
+          borderColor = Colors.red.shade300;
           break;
         default:
           backgroundColor = Colors.white;
           textColor = Colors.black;
+          borderColor = Colors.transparent;
       }
 
       return GestureDetector(
@@ -76,11 +72,12 @@ class _CreateTaskState extends State<CreateTask> {
           });
         },
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding:
+              const EdgeInsets.only(right: 20, left: 20, top: 10, bottom: 10),
           margin: const EdgeInsets.symmetric(horizontal: 5),
           decoration: BoxDecoration(
             color: backgroundColor,
-            border: Border.all(color: backgroundColor),
+            border: Border.all(color: borderColor),
             borderRadius: BorderRadius.circular(50),
           ),
           child: Text(
@@ -92,42 +89,24 @@ class _CreateTaskState extends State<CreateTask> {
     }).toList();
   }
 
-  String formatDate(String date) {
-    try {
-      final parsedDate = DateFormat("dd/MM/yyyy").parse(date);
-      return DateFormat("yyyy-MM-dd HH:mm:ss").format(parsedDate);
-    } catch (e) {
-      return "";
-    }
-  }
-
   void fetchData() async {
     final preferences = await SharedPreferences.getInstance();
     final token = preferences.getString("AuthToken");
 
     final Map<String, dynamic> taskData = {
-      'title': nameController.text,
-      'description': descriptionController.text,
-      'end_date': formatDate(endDateController.text),
-      'priority': selectedPriority,
-      'status': 'Pending',
+      "title": nameController.text,
+      "description": descriptionController.text,
+      "category": selectedCategory ?? "",
+      "priority": selectedPriority ?? "",
     };
-
-    if (taskData.values.contains(null) || taskData.values.contains("")) {
-      return;
-    }
-
-    print("Task Data: $taskData");
-
     try {
       final response = await http.post(
-        Uri.parse("http://localhost:3000/task/create"),
-        headers: {
-          "Content-Type": "application/json",
-          "token": "Bearer $token",
-        },
-        body: jsonEncode(taskData),
-      );
+          Uri.parse("http://10.0.2.2:3000/task/create"),
+          headers: {
+            "Content-Type": "application/json",
+            "token": "Bearer $token"
+          },
+          body: jsonEncode(taskData));
 
       if (response.statusCode != 201) {
         print("Error: $response");
@@ -139,260 +118,430 @@ class _CreateTaskState extends State<CreateTask> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 244, 244, 244),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Create New Task",
-          style: TextStyle(),
+    var textTheme = Theme.of(context).textTheme;
+
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        backgroundColor: Colors.grey[200],
+        appBar: AppBar(
+          title: const Text("Create New Task"),
         ),
-      ),
-      body: SingleChildScrollView(
-        child: Form(
-          key: _formGlobalKey,
-          child: Column(
-            children: <Widget>[
-              Container(
-                padding: EdgeInsets.all(10),
-                margin: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    hintText: "Task Title",
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Please enter a task title.";
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              SizedBox(height: 20),
-              Container(
-                padding: EdgeInsets.all(10),
-                margin: EdgeInsets.only(bottom: 20, right: 20, left: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Task Description"),
-                    SizedBox(height: 5),
-                    Divider(color: Colors.grey, thickness: 1),
-                    SizedBox(height: 5),
-                    TextFormField(
-                      controller: descriptionController,
-                      textAlign: TextAlign.start,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: "Task Description",
-                        contentPadding: EdgeInsets.symmetric(vertical: 20),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Please enter a task description.";
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: EdgeInsets.all(10),
-                margin: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: <Widget>[
-                    const Text(
-                      "End: ",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: endDateController,
-                        readOnly: true,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: "Select End Date",
-                        ),
-                        onTap: selectEndDate,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please select an end date.";
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: EdgeInsets.all(20),
-                margin: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: const [
-                        Text(
-                          "Category",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 24),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: categories.map((category) {
-                        bool isSelected = selectedCategory == category;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedCategory = category;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.only(
-                                top: 10, bottom: 10, right: 20, left: 20),
-                            margin: const EdgeInsets.only(right: 20),
-                            decoration: BoxDecoration(
-                              color: isSelected ? Colors.blue : Colors.white,
-                              border: Border.all(color: Colors.blue),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: Text(
-                              category,
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.blue,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: EdgeInsets.all(20),
-                margin: EdgeInsets.only(bottom: 20, left: 20, right: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: const [
-                        Text(
-                          "Priority",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 24),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: createPriorityButtons(),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                width: 360,
-                margin: EdgeInsets.all(20),
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_formGlobalKey.currentState!.validate()) {
-                      fetchData();
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Boarding()));
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                  ),
-                  child: const Text(
-                    "Create Task",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
+        body: Container(
+          color: const Color.fromARGB(255, 243, 241, 241),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildTopSideTexts(textTheme),
+                const SizedBox(height: 20),
+                _buildTaskTitleField(),
+                const SizedBox(height: 20),
+                _buildTaskDescriptionField(),
+                const SizedBox(height: 20),
+                _buildStartAndEndDatePickers(context),
+                const SizedBox(height: 20),
+                _buildPriorityPicker(),
+                const SizedBox(height: 20),
+                _buildCategoryPicker(),
+                const SizedBox(height: 20),
+                _buildBottomButtons(),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTopSideTexts(TextTheme textTheme) {
+    return const Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 60,
+            child: Divider(
+              thickness: 2,
+            ),
+          ),
+          Text(
+            "Add New Task",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 30,
+            ),
+          ),
+          SizedBox(
+            width: 70,
+            child: Divider(
+              thickness: 2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskTitleField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: nameController,
+          cursorColor: Colors.black,
+          decoration: const InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            labelText: "Task Title",
+            border: InputBorder.none,
+            floatingLabelBehavior: FloatingLabelBehavior.never,
+            contentPadding: EdgeInsets.only(bottom: 6, top: 0, left: 6),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTaskDescriptionField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Task Description"),
+        TextField(
+          controller: descriptionController,
+          maxLines: 4,
+          cursorColor: Colors.black,
+          decoration: const InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            labelText: "",
+            floatingLabelBehavior: FloatingLabelBehavior.never,
+            contentPadding: EdgeInsets.only(bottom: 6, top: 0, left: 6),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStartAndEndDatePickers(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _buildStartDatePicker(
+              context,
+              title: "Start Date",
+              selectedDate: startDate,
+              onDatePicked: (date) => setState(() => startDate = date),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            _buildEndDatePicker(
+              context,
+              title: "End Date",
+              endDate: endDate,
+              onDatePicked: (date) => setState(() => endDate = date),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStartDatePicker(
+    BuildContext context, {
+    required String title,
+    required DateTime? selectedDate,
+    required Function(DateTime) onDatePicked,
+  }) {
+    return Container(
+      width: 370,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10), topRight: Radius.circular(10)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(6.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            TextButton(
+              onPressed: () async {
+                DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate ?? DateTime.now(),
+                  firstDate: DateTime(1990),
+                  lastDate: DateTime(2100),
+                );
+                if (pickedDate != null) {
+                  onDatePicked(pickedDate);
+                }
+              },
+              child: Container(
+                  child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8)),
+                child: Text(
+                  selectedDate != null
+                      ? DateFormat("dd/MM/yyyy").format(selectedDate)
+                      : DateFormat("dd/MM/yyyy").format(DateTime.now()),
+                  style: const TextStyle(
+                    color: Colors.black,
+                  ),
+                ),
+              )),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEndDatePicker(
+    BuildContext context, {
+    required String title,
+    required DateTime? endDate,
+    required Function(DateTime) onDatePicked,
+  }) {
+    return Container(
+      width: 370,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(6.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            TextButton(
+              onPressed: () async {
+                DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: endDate ?? DateTime.now(),
+                  firstDate: DateTime(1990),
+                  lastDate: DateTime(2100),
+                );
+                if (pickedDate != null) {
+                  onDatePicked(pickedDate);
+                }
+              },
+              child: Container(
+                  child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8)),
+                child: Text(
+                  endDate != null
+                      ? DateFormat("dd/MM/yyyy").format(endDate)
+                      : DateFormat("dd/MM/yyyy").format(DateTime.now()),
+                ),
+              )),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Priority",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: createPriorityButtons(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Category",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () async {
+            // Show the dropdown when the container is tapped
+            String? selected = await showDialog<String>(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Pick a Category'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      children: categories.map((category) {
+                        return ListTile(
+                          title: Text(category),
+                          onTap: () {
+                            Navigator.pop(context, category);
+                          },
+                        );
+                      }).toList()
+                        ..add(
+                          ListTile(
+                            title: const Text('Other'),
+                            onTap: () async {
+                              Navigator.pop(context, 'Other');
+                            },
+                          ),
+                        ),
+                    ),
+                  ),
+                );
+              },
+            );
+
+            if (selected == 'Other') {
+              _showAddCategoryDialog();
+            } else if (selected != null) {
+              setState(() {
+                selectedCategory = selected;
+              });
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            padding:
+                const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.withOpacity(0.7), Colors.blue],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.3),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.category,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  selectedCategory ?? "Select Category",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddCategoryDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        TextEditingController newCategoryController = TextEditingController();
+        return AlertDialog(
+          title: const Text("Add New Category"),
+          content: TextField(
+            controller: newCategoryController,
+            decoration: const InputDecoration(hintText: "Enter new category"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                if (newCategoryController.text.isNotEmpty) {
+                  setState(() {
+                    categories.add(newCategoryController.text);
+                    selectedCategory = newCategoryController
+                        .text; // Set new category as selected
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text("Done"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        SizedBox(
+          width: 200,
+          child: ElevatedButton(
+            onPressed: () {
+              if (nameController.text.isEmpty ||
+                  descriptionController.text.isEmpty ||
+                  endDate == null) {
+                emptyWarning(context);
+              } else {
+                fetchData();
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const Boarding()));
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueGrey[300],
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            ),
+            child: const Text(
+              "Add Task",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
