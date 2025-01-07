@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,15 +16,16 @@ class Createtask extends StatefulWidget {
 class _CreatetaskState extends State<Createtask> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController newCategoryController = TextEditingController();
   DateTime? startDate;
   DateTime? endDate;
+  TimeOfDay? startTime;
+  TimeOfDay? endTime;
 
   List<String> categories = ['Work', 'Personal', 'Shopping', 'Fitness'];
   String? selectedCategory;
-  String? selectedPriority;
 
   List<String> priorities = ['Low', 'Medium', 'High', 'Urgent'];
+  String? selectedPriority;
 
   List<Widget> createPriorityButtons() {
     return priorities.map((priority) {
@@ -92,12 +92,31 @@ class _CreatetaskState extends State<Createtask> {
   void fetchData() async {
     final preferences = await SharedPreferences.getInstance();
     final token = preferences.getString("AuthToken");
+    startDate ??= DateTime.now();
+    startTime ??= TimeOfDay.now();
+
+    DateTime combinedStartDateTime = DateTime(
+      startDate!.year,
+      startDate!.month,
+      startDate!.day,
+      startTime!.hour,
+      startTime!.minute,
+    );
+    DateTime combinedEndDateTime = DateTime(
+      endDate!.year,
+      endDate!.month,
+      endDate!.day,
+      endDate!.hour,
+      endDate!.minute,
+    );
 
     final Map<String, dynamic> taskData = {
       "title": nameController.text,
       "description": descriptionController.text,
       "category": selectedCategory ?? "",
       "priority": selectedPriority ?? "",
+      "start_date": combinedStartDateTime.toIso8601String(),
+      "end_date": combinedEndDateTime.toIso8601String()
     };
     try {
       final response = await http.post(
@@ -107,13 +126,8 @@ class _CreatetaskState extends State<Createtask> {
             "token": "Bearer $token"
           },
           body: jsonEncode(taskData));
-
-      if (response.statusCode != 201) {
-        print("Error: $response");
-      }
-    } catch (e) {
-      print(e);
-    }
+      if (response.statusCode != 201) {}
+    } catch (e) {}
   }
 
   @override
@@ -236,7 +250,9 @@ class _CreatetaskState extends State<Createtask> {
               context,
               title: "Start Date",
               selectedDate: startDate,
+              selectedTime: startTime,
               onDatePicked: (date) => setState(() => startDate = date),
+              onTimePicked: (time) => setState(() => startTime = time),
             ),
           ],
         ),
@@ -245,8 +261,10 @@ class _CreatetaskState extends State<Createtask> {
             _buildEndDatePicker(
               context,
               title: "End Date",
-              endDate: endDate,
+              selectedDate: endDate,
+              selectedTime: endTime,
               onDatePicked: (date) => setState(() => endDate = date),
+              onTimePicked: (time) => setState(() => endTime = time),
             ),
           ],
         ),
@@ -257,6 +275,8 @@ class _CreatetaskState extends State<Createtask> {
   Widget _buildStartDatePicker(
     BuildContext context, {
     required String title,
+    required TimeOfDay? selectedTime,
+    required Function(TimeOfDay) onTimePicked,
     required DateTime? selectedDate,
     required Function(DateTime) onDatePicked,
   }) {
@@ -276,33 +296,60 @@ class _CreatetaskState extends State<Createtask> {
               title,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            TextButton(
-              onPressed: () async {
-                DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate ?? DateTime.now(),
-                  firstDate: DateTime(1990),
-                  lastDate: DateTime(2100),
-                );
-                if (pickedDate != null) {
-                  onDatePicked(pickedDate);
-                }
-              },
-              child: Container(
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () async {
+                    TimeOfDay? pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: selectedTime ?? TimeOfDay.now(),
+                    );
+                    if (pickedTime != null) {
+                      onTimePicked(pickedTime);
+                    }
+                  },
                   child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8)),
-                child: Text(
-                  selectedDate != null
-                      ? DateFormat("dd/MM/yyyy").format(selectedDate)
-                      : DateFormat("dd/MM/yyyy").format(DateTime.now()),
-                  style: const TextStyle(
-                    color: Colors.black,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      selectedTime != null
+                          ? selectedTime.format(context)
+                          : TimeOfDay.now().format(context),
+                      style: const TextStyle(color: Colors.black),
+                    ),
                   ),
                 ),
-              )),
+                TextButton(
+                  onPressed: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate ?? DateTime.now(),
+                      firstDate: DateTime(1990),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedDate != null) {
+                      onDatePicked(pickedDate);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Text(
+                      selectedDate != null
+                          ? DateFormat("dd/MM/yyyy").format(selectedDate)
+                          : DateFormat("dd/MM/yyyy").format(DateTime.now()),
+                      style: const TextStyle(
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -313,7 +360,9 @@ class _CreatetaskState extends State<Createtask> {
   Widget _buildEndDatePicker(
     BuildContext context, {
     required String title,
-    required DateTime? endDate,
+    required TimeOfDay? selectedTime,
+    required Function(TimeOfDay) onTimePicked,
+    required DateTime? selectedDate,
     required Function(DateTime) onDatePicked,
   }) {
     return Container(
@@ -321,7 +370,9 @@ class _CreatetaskState extends State<Createtask> {
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+          bottomLeft: Radius.circular(10),
+          bottomRight: Radius.circular(10),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(6.0),
@@ -332,30 +383,61 @@ class _CreatetaskState extends State<Createtask> {
               title,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            TextButton(
-              onPressed: () async {
-                DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: endDate ?? DateTime.now(),
-                  firstDate: DateTime(1990),
-                  lastDate: DateTime(2100),
-                );
-                if (pickedDate != null) {
-                  onDatePicked(pickedDate);
-                }
-              },
-              child: Container(
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () async {
+                    TimeOfDay? pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: selectedTime ?? TimeOfDay.now(),
+                    );
+                    if (pickedTime != null) {
+                      onTimePicked(pickedTime);
+                    }
+                  },
                   child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8)),
-                child: Text(
-                  endDate != null
-                      ? DateFormat("dd/MM/yyyy").format(endDate)
-                      : DateFormat("dd/MM/yyyy").format(DateTime.now()),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      selectedTime != null
+                          ? selectedTime.format(context)
+                          : TimeOfDay.now().format(context),
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  ),
                 ),
-              )),
+                TextButton(
+                  onPressed: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate ?? DateTime.now(),
+                      firstDate: DateTime(1990),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedDate != null) {
+                      onDatePicked(pickedDate);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      selectedDate != null
+                          ? DateFormat("dd/MM/yyyy").format(selectedDate)
+                          : DateFormat("dd/MM/yyyy").format(DateTime.now()),
+                      style: const TextStyle(
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

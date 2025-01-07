@@ -42,9 +42,7 @@ class _AuthHandlerState extends State<AuthHandler> {
       setState(() {
         _hasToken = token != null && token.isNotEmpty;
       });
-    } catch (e) {
-      print("Error checking token: $e");
-    }
+    } catch (e) {}
   }
 
   @override

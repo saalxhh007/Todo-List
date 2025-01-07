@@ -2,8 +2,21 @@ import taskModel from "../models/taskModel.js";
 
 export const createTask = async (req, res) => {
 
-    const { title, description, start_date, end_date, status, priority, voice } = req.body;
+    const { title, description, start_date, end_date, status, priority } = req.body;
     const user_id = req.user.id;
+    let voicePath = null;
+
+    if (req.file) {
+        const uploadDir = path.join(__dirname, "../uploads/voices/");
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const fileName = `${Date.now()}_${req.file.originalname}`;
+        voicePath = path.join(uploadDir, fileName);
+
+        fs.writeFileSync(voicePath, req.file.buffer);
+    }
     try {
         const newTask = await taskModel.create({
             title,
@@ -12,7 +25,7 @@ export const createTask = async (req, res) => {
             end_date,
             status,
             priority,
-            voice,
+            voice: voicePath,
             user_id,
         });
 
@@ -44,9 +57,10 @@ export const deleteTask = async (req, res) => {
     }
 };
 
-
 export const updateTask = async (req, res) => {
-    const { taskId } = req.query;
+    const { taskId } = req.params;
+    console.log(taskId);
+    
     const updates = req.body;
     
     try {
@@ -117,9 +131,13 @@ export const completedTasks = async (req, res) => {
         res.status(500).json({ success: false, message: "Error In Retrieving Tasks" });
     }
 }
+
 export const updateStatus = async (req, res) => {
-    const { taskId } = req.query; // Assuming you're using query parameters
-    const { status } = req.body; 
+    const { taskId } = req.params;
+    const { status } = req.body;
+    console.log(req.params);
+    console.log(taskId);
+    
 
     try {
         const taskToUpdate = await taskModel.findByPk(taskId);

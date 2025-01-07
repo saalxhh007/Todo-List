@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 class TaskWidget extends StatelessWidget {
   final String title;
   final String description;
-  final String date;
-  final String time;
+  final String start_date;
+  final String start_time;
+  final String end_date;
+  final String end_time;
   final bool isCompleted;
   final VoidCallback onTap;
   final ValueChanged<bool> onCheck;
@@ -13,8 +15,10 @@ class TaskWidget extends StatelessWidget {
     super.key,
     required this.title,
     required this.description,
-    required this.date,
-    required this.time,
+    required this.start_date,
+    required this.start_time,
+    required this.end_date,
+    required this.end_time,
     required this.isCompleted,
     required this.onTap,
     required this.onCheck,
@@ -83,14 +87,14 @@ class TaskWidget extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        date,
+                        start_date,
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.grey,
                         ),
                       ),
                       Text(
-                        time,
+                        start_time,
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,

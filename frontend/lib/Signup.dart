@@ -67,9 +67,7 @@ class _SignupState extends State<Signup> {
           const SnackBar(content: Text("Sign Up Failed")),
         );
       }
-    } catch (e) {
-      print(e);
-    }
+    } catch (e) {}
   }
 
   @override

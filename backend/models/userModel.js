@@ -36,10 +36,6 @@ const userModel = sequelize.define("User", {
     updatedAt:{
         type:DataTypes.DATE,
         allowNull:true
-    },
-    image: {
-        type: DataTypes.STRING,
-        allowNull: true
     }
 },{
     tableName:"User",

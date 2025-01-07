@@ -13,6 +13,8 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+  bool isChecked = false;
+
   void fetchData() async {
     final Map<String, dynamic> userData = {
       "email": emailController.text,
@@ -33,6 +35,15 @@ class _LoginState extends State<Login> {
         final preferences = await SharedPreferences.getInstance();
         await preferences.setString("AuthToken", token);
 
+        if (isChecked) {
+          await preferences.setString("email", emailController.text);
+          await preferences.setString("password", passwordController.text);
+          await preferences.setBool("rememberMe", true);
+        } else {
+          await preferences.remove("email");
+          await preferences.remove("password");
+          await preferences.remove("rememberMe");
+        }
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -52,11 +63,26 @@ class _LoginState extends State<Login> {
     }
   }
 
+  void _loadCredentials() async {
+    final preferences = await SharedPreferences.getInstance();
+    setState(() {
+      emailController.text = preferences.getString('email') ?? '';
+      passwordController.text = preferences.getString('password') ?? '';
+      isChecked = preferences.getBool('rememberMe') ?? false;
+    });
+  }
+
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCredentials();
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isChecked = false;
     final formGlobalKey = GlobalKey<FormState>();
     return Scaffold(
       appBar: AppBar(
