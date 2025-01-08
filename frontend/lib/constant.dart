@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ftoast/ftoast.dart';
 import 'package:panara_dialogs/panara_dialogs.dart';
 
-
 // empty textfield warning
 dynamic emptyWarning(BuildContext context) {
   return FToast.toast(
@@ -27,22 +26,16 @@ dynamic updateTaskWarning(BuildContext context) {
   );
 }
 
-
 // no task to delete
 dynamic noTaskWarning(BuildContext context) {
-  return PanaraInfoDialog.showAnimatedGrow(
-    context,
-    title: "Oops!",
-    message: "There is no task to delete!\n try adding some and the try to delete it!",
-
-    buttonText: "Okay",
-    onTapDismiss: () {
-      Navigator.pop(context);
-    },
-    panaraDialogType: PanaraDialogType.warning
-  );
+  return PanaraInfoDialog.showAnimatedGrow(context,
+      title: "Oops!",
+      message:
+          "There is no task to delete!\n try adding some and the try to delete it!",
+      buttonText: "Okay", onTapDismiss: () {
+    Navigator.pop(context);
+  }, panaraDialogType: PanaraDialogType.warning);
 }
-
 
 dynamic deleteAllTasks(BuildContext context, VoidCallback onDelete) {
   return PanaraConfirmDialog.showAnimatedGrow(
@@ -52,7 +45,7 @@ dynamic deleteAllTasks(BuildContext context, VoidCallback onDelete) {
     confirmButtonText: "Yes",
     cancelButtonText: "No",
     onTapConfirm: () {
-      onDelete(); 
+      onDelete();
       Navigator.pop(context);
     },
     onTapCancel: () {

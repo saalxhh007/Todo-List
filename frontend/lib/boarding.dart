@@ -309,10 +309,20 @@ class _BoardingState extends State<Boarding> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (alltasks.isEmpty) {
                           noTaskWarning(context);
                         } else {
+                          for (var task in alltasks) {
+                            await http.post(
+                              Uri.parse("http://10.0.2.2:3000/task/delete"),
+                              headers: {
+                                "Content-Type": "application/json",
+                                "token": _token ?? "",
+                              },
+                              body: jsonEncode({"taskId": task.id}),
+                            );
+                          }
                           deleteAllTasks(context, () {
                             setState(() {
                               alltasks.clear();
@@ -355,7 +365,7 @@ class _BoardingState extends State<Boarding> {
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold)),
                         Text(
-                            "${alltasks.where((task) => task.isCompleted).length}/${alltasks.length} tasks remaining",
+                            "${alltasks.where((task) => task.isCompleted).length}/${alltasks.length} tasks Completed",
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
